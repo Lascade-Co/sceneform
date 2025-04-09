@@ -51,23 +51,15 @@ android {
 
 dependencies {
     implementation(files("libs/libsceneform_runtime_schemas.jar"))
-
-    // Kotlin
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.kotlinx.coroutines.jdk8)
-
-    // Filament
     api(libs.filament.android)
     api(libs.gltfio.android)
     api(libs.filament.utils.android)
-
-    // AndroidX
     implementation(libs.annotation)
     implementation(libs.lifecycle.runtime.ktx)
-
-    // Fuel
     implementation(libs.fuel)
     implementation(libs.fuel.android)
     implementation(libs.fuel.coroutines)
@@ -81,6 +73,8 @@ val publishKey = String(
     Base64.getDecoder().decode(localProps.getProperty("PUBLISH_KEY_BASE64")), Charsets.UTF_8
 )
 val publishPassphrase: String = localProps.getProperty("PUBLISH_KEY_PASSPHRASE")
+val ossrhUsername: String = localProps.getProperty("OSSRH_USER_NAME")
+val ossrhPassword: String = localProps.getProperty("OSSRH_PASSWORD")
 
 publishing {
     publications {
@@ -124,6 +118,17 @@ publishing {
 
     repositories {
         maven {
+            name = "sonatype"
+            val releasesRepoUrl = uri("https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/")
+            val snapshotsRepoUrl = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/")
+            url = if (version.toString().endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl
+
+            credentials {
+                username = ossrhUsername
+                password = ossrhPassword
+            }
+        }
+        maven {
             name = "local"
             url = layout.buildDirectory.dir("repo").get().asFile.toURI()
         }
@@ -134,4 +139,3 @@ signing {
     useInMemoryPgpKeys(publishKey, publishPassphrase)
     sign(publishing.publications["release"])
 }
-

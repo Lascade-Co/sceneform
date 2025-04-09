@@ -1,9 +1,6 @@
 package com.gorisse.thomas.sceneform
 
 import com.google.android.filament.EntityManager
-import com.google.android.filament.gltfio.AssetLoader
-import com.google.android.filament.gltfio.ResourceLoader
-import com.google.android.filament.gltfio.UbershaderLoader
 import com.google.android.filament.utils.Float3
 import com.google.android.filament.utils.Float4
 import com.google.ar.sceneform.rendering.EngineInstance
@@ -18,16 +15,7 @@ object Filament {
     val entityManager
         get() = EntityManager.get()
 
-    val uberShaderLoader by lazy { UbershaderLoader(engine) }
-
-    @JvmStatic
-    val assetLoader by lazy {
-        AssetLoader(engine, uberShaderLoader, entityManager)
-    }
-
     val transformManager get() = engine.transformManager
-
-    val resourceLoader by lazy { ResourceLoader(engine, true, false, false) }
 
     val lightManager get() = engine.lightManager
 

@@ -2,7 +2,6 @@ package com.gorisse.thomas.sceneform.scene
 
 import androidx.lifecycle.LifecycleCoroutineScope
 import com.google.android.filament.utils.HDRLoader
-import com.google.android.filament.utils.KTXLoader
 import com.google.ar.sceneform.rendering.Renderable
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
@@ -23,9 +22,6 @@ import kotlinx.coroutines.future.await
  * If cancelling the given stage is undesired, stage.asDeferred().await() should be used instead.
  *
  * @return the created directional light
- *
- * @see [KTXLoader.loadEnvironment]
- * @see [HDRLoader.loadEnvironment]
  */
 suspend fun <T : Renderable, B : Renderable.Builder<T, B>> Renderable.Builder<T, B>.build(
     coroutineScope: LifecycleCoroutineScope

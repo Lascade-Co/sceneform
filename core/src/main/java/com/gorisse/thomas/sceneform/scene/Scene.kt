@@ -2,7 +2,6 @@ package com.gorisse.thomas.sceneform.scene
 
 import com.google.android.filament.Scene
 import com.google.android.filament.utils.HDRLoader
-import com.google.android.filament.utils.KTXLoader
 import com.gorisse.thomas.sceneform.environment.Environment
 
 /**
@@ -22,9 +21,6 @@ import com.gorisse.thomas.sceneform.environment.Environment
  * - When added to a Scene, the Skybox fills all untouched pixels.
  *
  * @return the created directional light
- *
- * @see [KTXLoader.loadEnvironment]
- * @see [HDRLoader.loadEnvironment]
  */
 fun Scene.setEnvironment(environment: Environment?) {
     if (indirectLight != environment?.indirectLight) {

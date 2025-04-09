@@ -14,18 +14,11 @@ import android.view.SurfaceView;
 
 import androidx.annotation.Nullable;
 
-import com.google.android.filament.Camera;
 import com.google.android.filament.ColorGrading;
-import com.google.android.filament.Colors;
 import com.google.android.filament.Entity;
-import com.google.android.filament.EntityManager;
-import com.google.android.filament.IndexBuffer;
 import com.google.android.filament.LightManager;
-import com.google.android.filament.Skybox;
-import com.google.android.filament.ToneMapper;
 import com.google.android.filament.View;
 import com.google.android.filament.utils.HDRLoader;
-import com.google.android.filament.utils.KTXLoader;
 import com.google.ar.sceneform.rendering.Color;
 import com.google.ar.sceneform.rendering.EngineInstance;
 import com.google.ar.sceneform.rendering.Renderer;
@@ -35,7 +28,6 @@ import com.google.ar.sceneform.utilities.Preconditions;
 import com.gorisse.thomas.sceneform.SceneViewKt;
 import com.gorisse.thomas.sceneform.environment.Environment;
 import com.gorisse.thomas.sceneform.environment.HDREnvironmentKt;
-import com.gorisse.thomas.sceneform.environment.KTXEnvironmentKt;
 import com.gorisse.thomas.sceneform.light.LightKt;
 import com.gorisse.thomas.sceneform.util.ResourceLoaderKt;
 
@@ -158,21 +150,6 @@ public class SceneView extends SurfaceView implements Choreographer.FrameCallbac
         renderer.getFilamentView().setBlendMode(transparent ? View.BlendMode.TRANSLUCENT : View.BlendMode.OPAQUE);
 
 
-    }
-
-    /**
-     * <pre>
-     *     Set a higher bound for the frame rate. It is possible
-     *     to obtain the higher bound from the {@link com.google.ar.core.Session}.
-     *     <code>session.getCameraConfig().getFpsRange().getUpper();</code>.
-     *
-     *     The default value is 60.
-     * </pre>
-     *
-     * @param maxFramesPerSeconds int
-     */
-    public void setMaxFramesPerSeconds(int maxFramesPerSeconds) {
-        this.maxFramesPerSeconds = maxFramesPerSeconds;
     }
 
     /**

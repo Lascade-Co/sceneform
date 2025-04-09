@@ -41,7 +41,6 @@ import java.util.function.Function;
  * Controls how a {@link Renderable} is displayed. There can be multiple RenderableInstances
  * displaying a single Renderable.
  *
- * @hide
  */
 @SuppressWarnings("AndroidJdkLibsChecker")
 public class RenderableInstance implements AnimatableModel {
@@ -118,8 +117,6 @@ public class RenderableInstance implements AnimatableModel {
                     createFilamentChildEntity(EngineInstance.getEngine(), entity, relativeTransform);
         }
 
-        createGltfModelInstance();
-
         createFilamentAssetModelInstance();
 
         ResourceManager.getInstance()
@@ -128,9 +125,7 @@ public class RenderableInstance implements AnimatableModel {
     }
 
     void createFilamentAssetModelInstance() {
-        if (renderable.getRenderableData() instanceof RenderableInternalFilamentAssetData) {
-            RenderableInternalFilamentAssetData renderableData =
-                    (RenderableInternalFilamentAssetData) renderable.getRenderableData();
+        if (renderable.getRenderableData() instanceof RenderableInternalFilamentAssetData renderableData) {
 
             Engine engine = EngineInstance.getEngine().getFilamentEngine();
 
@@ -140,8 +135,7 @@ public class RenderableInstance implements AnimatableModel {
                             RenderableInternalFilamentAssetData.getUberShaderLoader(),
                             EntityManager.get());
 
-            FilamentAsset createdAsset = renderableData.isGltfBinary ? loader.createAssetFromBinary(renderableData.gltfByteBuffer)
-                    : loader.createAssetFromJson(renderableData.gltfByteBuffer);
+            FilamentAsset createdAsset = loader.createAsset(renderableData.gltfByteBuffer);
 
             if (createdAsset == null) {
                 throw new IllegalStateException("Failed to load gltf");
@@ -211,7 +205,7 @@ public class RenderableInstance implements AnimatableModel {
             setShadowCaster(renderable.isShadowCaster());
             setShadowReceiver(renderable.isShadowReceiver());
 
-            filamentAnimator = createdAsset != null ? createdAsset.getAnimator() : null;
+            filamentAnimator = createdAsset.getInstance().getAnimator();
             animations = new ArrayList<>();
             for (int i = 0; i < filamentAnimator.getAnimationCount(); i++) {
                 animations.add(new ModelAnimation(this, filamentAnimator.getAnimationName(i), i,
@@ -219,10 +213,6 @@ public class RenderableInstance implements AnimatableModel {
                         getRenderable().getAnimationFrameRate()));
             }
         }
-    }
-
-    void createGltfModelInstance() {
-        return;
     }
 
     @Nullable

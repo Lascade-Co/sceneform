@@ -9,7 +9,7 @@ import androidx.annotation.Nullable;
 import com.google.android.filament.IndexBuffer;
 import com.google.android.filament.VertexBuffer;
 import com.google.android.filament.gltfio.ResourceLoader;
-import com.google.android.filament.gltfio.UbershaderLoader;
+import com.google.android.filament.gltfio.UbershaderProvider;
 import com.google.ar.sceneform.math.Vector3;
 import com.google.ar.sceneform.rendering.RenderableInternalData.MeshData;
 
@@ -29,11 +29,11 @@ public class RenderableInternalFilamentAssetData implements IRenderableInternalD
   boolean isGltfBinary;
   ResourceLoader resourceLoader;
   @Nullable Function<String, Uri> urlResolver;
-  static UbershaderLoader ubershaderLoader;
+  static UbershaderProvider ubershaderLoader;
 
-  static UbershaderLoader getUberShaderLoader() {
+  static UbershaderProvider getUberShaderLoader() {
     if(ubershaderLoader == null) {
-      ubershaderLoader = new UbershaderLoader(EngineInstance.getEngine().getFilamentEngine());
+      ubershaderLoader = new UbershaderProvider(EngineInstance.getEngine().getFilamentEngine());
     }
     return ubershaderLoader;
   }

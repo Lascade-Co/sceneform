@@ -15,11 +15,6 @@ import com.google.android.filament.VertexBuffer;
 import com.google.android.filament.VertexBuffer.Builder;
 import com.google.android.filament.VertexBuffer.VertexAttribute;
 import com.google.android.filament.utils.Mat4;
-import com.google.ar.core.Camera;
-import com.google.ar.core.CameraIntrinsics;
-import com.google.ar.core.Config;
-import com.google.ar.core.Frame;
-import com.google.ar.core.Session;
 import com.google.ar.sceneform.utilities.AndroidPreconditions;
 import com.google.ar.sceneform.utilities.Preconditions;
 
@@ -69,15 +64,6 @@ public class CameraStream {
     private final FloatBuffer transformedCameraUvCoords;
     private final IEngine engine;
     public int cameraStreamRenderable = UNINITIALIZED_FILAMENT_RENDERABLE;
-
-    /**
-     * By default the depthMode is set to {@link DepthMode#NO_DEPTH}
-     */
-    private DepthMode depthMode = DepthMode.NO_DEPTH;
-    /**
-     * By default the depthOcclusionMode ist set to {@link DepthOcclusionMode#DEPTH_OCCLUSION_DISABLED}
-     */
-    private DepthOcclusionMode depthOcclusionMode = DepthOcclusionMode.DEPTH_OCCLUSION_DISABLED;
 
     @Nullable
     private ExternalTexture cameraTexture;
@@ -322,65 +308,9 @@ public class CameraStream {
     }
 
 
-    /**
-     * The {@link Session} holds the information if the DepthMode is configured or not. Based on
-     * that result different materials and textures are used for the camera.
-     *
-     * @param session {@link Session}
-     * @param config  {@link Config}
-     */
-    public void checkIfDepthIsEnabled(Session session, Config config) {
-        depthMode = DepthMode.NO_DEPTH;
-
-        if (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC))
-            if (config.getDepthMode() == Config.DepthMode.AUTOMATIC) {
-                depthMode = DepthMode.DEPTH;
-            }
-
-        if (session.isDepthModeSupported(Config.DepthMode.RAW_DEPTH_ONLY))
-            if (config.getDepthMode() == Config.DepthMode.RAW_DEPTH_ONLY) {
-                depthMode = DepthMode.RAW_DEPTH;
-            }
-    }
-
     public boolean isTextureInitialized() {
         return isTextureInitialized;
     }
-
-    public void initializeTexture(Frame frame) {
-        if (isTextureInitialized()) {
-            return;
-        }
-
-        // External Camera Texture
-        if (cameraTexture == null) {
-            Camera arCamera = frame.getCamera();
-            CameraIntrinsics intrinsics = arCamera.getTextureIntrinsics();
-            int[] dimensions = intrinsics.getImageDimensions();
-
-            cameraTexture = new ExternalTexture(
-                    cameraTextureId,
-                    dimensions[0],
-                    dimensions[1]);
-        }
-
-        if (depthOcclusionMode == DepthOcclusionMode.DEPTH_OCCLUSION_ENABLED && (
-                depthMode == DepthMode.DEPTH ||
-                        depthMode == DepthMode.RAW_DEPTH)) {
-            if (occlusionCameraMaterial != null) {
-                isTextureInitialized = true;
-                setOcclusionMaterial(occlusionCameraMaterial);
-                initOrUpdateRenderableMaterial(occlusionCameraMaterial);
-            }
-        } else {
-            if (cameraMaterial != null) {
-                isTextureInitialized = true;
-                setCameraMaterial(cameraMaterial);
-                initOrUpdateRenderableMaterial(cameraMaterial);
-            }
-        }
-    }
-
 
     /**
      * <pre>
@@ -410,18 +340,6 @@ public class CameraStream {
         depthTexture.updateDepthTexture(depthImage);
     }
 
-
-    public void recalculateCameraUvs(Frame frame) {
-        FloatBuffer cameraUvCoords = this.cameraUvCoords;
-        FloatBuffer transformedCameraUvCoords = this.transformedCameraUvCoords;
-        VertexBuffer cameraVertexBuffer = this.cameraVertexBuffer;
-        frame.transformDisplayUvCoords(cameraUvCoords, transformedCameraUvCoords);
-        adjustCameraUvsForOpenGL();
-        cameraVertexBuffer.setBufferAt(
-                engine.getFilamentEngine(), UV_BUFFER_INDEX, transformedCameraUvCoords);
-    }
-
-
     private void adjustCameraUvsForOpenGL() {
         // Correct for vertical coordinates to match OpenGL
         for (int i = 1; i < VERTEX_COUNT * 2; i += 2) {
@@ -441,159 +359,6 @@ public class CameraStream {
             int renderableInstance = renderableManager.getInstance(cameraStreamRenderable);
             renderableManager.setPriority(renderableInstance, renderablePriority);
         }
-    }
-
-    /**
-     * Gets the currently applied depth mode depending on the device supported modes.
-     */
-    public DepthMode getDepthMode() {
-        return depthMode;
-    }
-
-    /**
-     * Checks whether the provided DepthOcclusionMode is supported on this device with the selected camera configuration and AR config.
-     * The current list of supported devices is documented on the ARCore supported devices page.
-     *
-     * @param depthOcclusionMode The desired depth mode to check.
-     * @return True if the depth mode has been activated on the AR session config
-     * and the provided depth occlusion mode is supported on this device.
-     */
-    public boolean isDepthOcclusionModeSupported(DepthOcclusionMode depthOcclusionMode) {
-        switch (depthOcclusionMode) {
-            case DEPTH_OCCLUSION_ENABLED:
-                return depthMode == DepthMode.DEPTH || depthMode == DepthMode.RAW_DEPTH;
-            default:
-                return true;
-        }
-    }
-
-    /**
-     * Gets the current Depth Occlusion Mode
-     *
-     * @return the occlusion mode currently defined for the CarmeraStream
-     * @see #setDepthOcclusionMode
-     * @see DepthOcclusionMode
-     */
-    public DepthOcclusionMode getDepthOcclusionMode() {
-        return depthOcclusionMode;
-    }
-
-
-    /**
-     * <pre>
-     *     Set the DepthModeUsage to {@link DepthOcclusionMode#DEPTH_OCCLUSION_ENABLED} to set the
-     *     occlusion {@link com.google.android.filament.Material}. This will process the incoming DepthImage to
-     *     occlude virtual objects behind real world objects. If the {@link Session} configuration
-     *     for the {@link com.google.ar.core.Config.DepthMode} is set to {@link Config.DepthMode#DISABLED},
-     *     the standard camera {@link Material} is used.
-     *
-     *     Set the DepthModeUsage to {@link DepthOcclusionMode#DEPTH_OCCLUSION_DISABLED} to set the
-     *     standard camera {@link com.google.android.filament.Material}.
-     *
-     *     A good place to set the DepthModeUsage is inside of the onViewCreated() function call.
-     *     To make sure that this function is called in your code set the correct listener on
-     *     your Ar Fragment
-     *
-     *     <code>public void onAttachFragment(
-     *         FragmentManager fragmentManager,
-     *         Fragment fragment
-     *     ) {
-     *         if (fragment.getId() == R.id.arFragment) {
-     *             arFragment = (ArFragment) fragment;
-     *             arFragment.setOnViewCreatedListener(this);
-     *             arFragment.setOnSessionConfigurationListener(this);
-     *         }
-     *     }
-     *
-     *     public void onViewCreated(
-     *         ArFragment arFragment,
-     *         ArSceneView arSceneView
-     *     ) {
-     *         arSceneView
-     *            .getCameraStream()
-     *            .setDepthModeUsage(CameraStream
-     *               .setDepthOcclusionMode
-     *               .DEPTH_OCCLUSION_DISABLED);
-     *     }
-     *     </code>
-     *
-     *     The default value for {@link DepthOcclusionMode} is {@link DepthOcclusionMode#DEPTH_OCCLUSION_DISABLED}.
-     * </pre>
-     *
-     * @param depthOcclusionMode {@link DepthOcclusionMode}
-     */
-    public void setDepthOcclusionMode(DepthOcclusionMode depthOcclusionMode) {
-        // Only set the occlusion material if the session config
-        // has set the DepthMode to AUTOMATIC or RAW_DEPTH_ONLY,
-        // otherwise set the standard camera material.
-        if (isDepthOcclusionModeSupported(depthOcclusionMode)) {
-            if (occlusionCameraMaterial != null) {
-                setOcclusionMaterial(occlusionCameraMaterial);
-                initOrUpdateRenderableMaterial(occlusionCameraMaterial);
-            }
-        } else {
-            if (cameraMaterial != null) {
-                setCameraMaterial(cameraMaterial);
-                initOrUpdateRenderableMaterial(cameraMaterial);
-            }
-        }
-
-        this.depthOcclusionMode = depthOcclusionMode;
-    }
-
-
-    /**
-     * The DepthMode Enum is used to reflect the {@link Session} configuration
-     * for the DepthMode to decide if the occlusion material should be set and if
-     * frame.acquireDepthImage() or frame.acquireRawDepthImage() should be called to get
-     * the input data for the depth texture.
-     */
-    public enum DepthMode {
-        /**
-         * <pre>
-         * The {@link Session} is not configured to use the Depth-API
-         *
-         * This is the default value
-         * </pre>
-         */
-        NO_DEPTH,
-        /**
-         * The {@link Session} is configured to use the DepthMode AUTOMATIC
-         */
-        DEPTH,
-        /**
-         * The {@link Session} is configured to use the DepthMode RAW_DEPTH_ONLY
-         */
-        RAW_DEPTH
-    }
-
-
-    /**
-     * Independent from the {@link Session} configuration, the user can decide with the
-     * DeptModeUsage which {@link com.google.android.filament.Material} should be set to the
-     * CameraStream renderable.
-     */
-    public enum DepthOcclusionMode {
-        /**
-         * Set the occlusion material. If the {@link Session} is not
-         * configured properly the standard camera material is used.
-         * Valid {@link Session} configuration for the DepthMode are
-         * {@link Config.DepthMode#AUTOMATIC} and {@link Config.DepthMode#RAW_DEPTH_ONLY}.
-         */
-        DEPTH_OCCLUSION_ENABLED,
-        /**
-         * <pre>
-         * Use this value if the standard camera material should be applied to
-         * the CameraStream Renderable even if the {@link Session} configuration has set
-         * the DepthMode to {@link Config.DepthMode#AUTOMATIC} or
-         * {@link Config.DepthMode#RAW_DEPTH_ONLY}. This Option is useful, if you
-         * want to use the DepthImage or RawDepthImage or just the DepthPoints without the
-         * occlusion effect.
-         *
-         * This is the default value
-         * </pre>
-         */
-        DEPTH_OCCLUSION_DISABLED
     }
 
     /**

@@ -18,6 +18,4 @@ public interface CameraProvider extends TransformProvider {
   Matrix getViewMatrix();
 
   Matrix getProjectionMatrix();
-
-  void updateTrackedPose(com.google.ar.core.Camera camera);
 }

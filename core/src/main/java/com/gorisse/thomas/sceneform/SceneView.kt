@@ -4,7 +4,6 @@ import com.google.android.filament.utils.*
 import com.google.ar.sceneform.SceneView
 import com.gorisse.thomas.sceneform.environment.Environment
 import com.gorisse.thomas.sceneform.light.Light
-import com.gorisse.thomas.sceneform.light.intensity
 
 /**
  * ### Defines the lighting environment and the skybox of the scene

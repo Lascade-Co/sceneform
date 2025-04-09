@@ -3,7 +3,6 @@ package com.google.ar.sceneform;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import android.view.MotionEvent;
-import com.google.ar.core.Pose;
 
 import com.google.ar.sceneform.collision.Ray;
 import com.google.ar.sceneform.math.MathHelper;
@@ -17,9 +16,7 @@ import com.google.ar.sceneform.utilities.Preconditions;
 /**
  * Represents a virtual camera, which determines the perspective through which the scene is viewed.
  *
- * <p>If the camera is part of an {@link ArSceneView}, then the camera automatically tracks the
- * camera pose from ARCore. Additionally, the following methods will throw {@link
- * UnsupportedOperationException} when called:
+ * <p>The following methods will throw {@link UnsupportedOperationException} when called:
  *
  * <ul>
  *   <li>{@link #setParent(NodeParent)} - Camera's parent cannot be changed, it is always the scene.
@@ -55,19 +52,7 @@ public class Camera extends Node implements CameraProvider {
   private float verticalFov = DEFAULT_VERTICAL_FOV_DEGREES;
 
   // isArCamera will be true if the Camera is part of an ArSceneView, false otherwise.
-  private final boolean isArCamera;
   private boolean areMatricesInitialized;
-
-  /**
-   * Constructor just for testing. When testing the Camera directly it is not part of any View, so
-   * the isArCamera flag must be set explicitly.
-   *
-   * @hide
-   */
-  @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
-  Camera(boolean isArCamera) {
-    this.isArCamera = isArCamera;
-  }
 
   @SuppressWarnings("initialization")
   Camera(Scene scene) {
@@ -75,25 +60,16 @@ public class Camera extends Node implements CameraProvider {
     Preconditions.checkNotNull(scene, "Parameter \"scene\" was null.");
     super.setParent(scene);
 
-    isArCamera = scene.getView() instanceof ArSceneView;
-    if (!isArCamera) {
-      scene
-          .getView()
-          .addOnLayoutChangeListener(
+      scene.getView().addOnLayoutChangeListener(
               (v, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom) ->
                   refreshProjectionMatrix());
-    }
   }
 
   /** @hide */
   public void setNearClipPlane(float nearPlane) {
     this.nearPlane = nearPlane;
 
-    // If this is an ArCamera, the projection matrix gets re-created when updateTrackedPose is
-    // called every frame. Otherwise, update it now.
-    if (!isArCamera) {
       refreshProjectionMatrix();
-    }
   }
 
   @Override
@@ -107,9 +83,7 @@ public class Camera extends Node implements CameraProvider {
 
     // If this is an ArCamera, the projection matrix gets re-created when updateTrackedPose is
     // called every frame. Otherwise, update it now.
-    if (!isArCamera) {
       refreshProjectionMatrix();
-    }
   }
 
   /**
@@ -119,15 +93,11 @@ public class Camera extends Node implements CameraProvider {
    *
    * @throws UnsupportedOperationException if this is an AR camera
    */
-  
+
   public void setVerticalFovDegrees(float verticalFov) {
     this.verticalFov = verticalFov;
 
-    if (!isArCamera) {
       refreshProjectionMatrix();
-    } else {
-      throw new UnsupportedOperationException("Cannot set the field of view for AR cameras.");
-    }
   }
 
   /**
@@ -142,20 +112,9 @@ public class Camera extends Node implements CameraProvider {
    *
    * @throws IllegalStateException if called before the first frame after ARCore is resumed
    */
-  
+
   public float getVerticalFovDegrees() {
-    if (isArCamera) {
-      if (areMatricesInitialized) {
-        double fovRadians = 2.0 * Math.atan(1.0 / projectionMatrix.data[5]);
-        return (float) Math.toDegrees(fovRadians);
-      } else {
-        throw new IllegalStateException(
-            "Cannot get the field of view for AR cameras until the first frame after ARCore has "
-                + "been resumed.");
-      }
-    } else {
       return verticalFov;
-    }
   }
 
   @Override
@@ -173,31 +132,6 @@ public class Camera extends Node implements CameraProvider {
   @Override
   public Matrix getProjectionMatrix() {
     return projectionMatrix;
-  }
-
-  /**
-   * Updates the pose and projection of the camera to match the tracked pose from ARCore.
-   *
-   * @hide Called internally as part of the integration with ARCore, should not be called directly.
-   */
-  @Override
-  public void updateTrackedPose(com.google.ar.core.Camera camera) {
-    Preconditions.checkNotNull(camera, "Parameter \"camera\" was null.");
-
-    // Update the projection matrix.
-    camera.getProjectionMatrix(projectionMatrix.data, 0, nearPlane, farPlane);
-
-    // Update the view matrix.
-    camera.getViewMatrix(viewMatrix.data, 0);
-
-    // Update the node's transformation properties to match the tracked pose.
-    Pose pose = camera.getDisplayOrientedPose();
-    Vector3 position = ArHelpers.extractPositionFromPose(pose);
-    Quaternion rotation = ArHelpers.extractRotationFromPose(pose);
-    super.setWorldPosition(position);
-    super.setWorldRotation(rotation);
-
-    areMatricesInitialized = true;
   }
 
   Ray motionEventToRay(MotionEvent motionEvent) {
@@ -285,72 +219,44 @@ public class Camera extends Node implements CameraProvider {
    * Set the position of the camera. The camera always {@link #isTopLevel()}, therefore this behaves
    * the same as {@link #setWorldPosition(Vector3)}.
    *
-   * <p>If the camera is part of an {@link ArSceneView}, then this is an unsupported operation.
-   * Camera's position cannot be changed, it is controlled by the ARCore camera pose.
    */
   @Override
   public void setLocalPosition(Vector3 position) {
-    if (isArCamera) {
-      throw new UnsupportedOperationException(
-          "Camera's position cannot be changed, it is controller by the ARCore camera pose.");
-    } else {
       super.setLocalPosition(position);
       Matrix.invert(getWorldModelMatrix(), viewMatrix);
-    }
   }
 
   /**
    * Set the rotation of the camera. The camera always {@link #isTopLevel()}, therefore this behaves
    * the same as {@link #setWorldRotation(Quaternion)}.
    *
-   * <p>If the camera is part of an {@link ArSceneView}, then this is an unsupported operation.
-   * Camera's rotation cannot be changed, it is controlled by the ARCore camera pose.
    */
   @Override
   public void setLocalRotation(Quaternion rotation) {
-    if (isArCamera) {
-      throw new UnsupportedOperationException(
-          "Camera's rotation cannot be changed, it is controller by the ARCore camera pose.");
-    } else {
       super.setLocalRotation(rotation);
       Matrix.invert(getWorldModelMatrix(), viewMatrix);
-    }
   }
 
   /**
    * Set the position of the camera. The camera always {@link #isTopLevel()}, therefore this behaves
    * the same as {@link #setLocalPosition(Vector3)}.
    *
-   * <p>If the camera is part of an {@link ArSceneView}, then this is an unsupported operation.
-   * Camera's position cannot be changed, it is controlled by the ARCore camera pose.
    */
   @Override
   public void setWorldPosition(Vector3 position) {
-    if (isArCamera) {
-      throw new UnsupportedOperationException(
-          "Camera's position cannot be changed, it is controller by the ARCore camera pose.");
-    } else {
       super.setWorldPosition(position);
       Matrix.invert(getWorldModelMatrix(), viewMatrix);
-    }
   }
 
   /**
    * Set the rotation of the camera. The camera always {@link #isTopLevel()}, therefore this behaves
    * the same as {@link #setLocalRotation(Quaternion)}.
    *
-   * <p>If the camera is part of an {@link ArSceneView}, then this is an unsupported operation.
-   * Camera's rotation cannot be changed, it is controlled by the ARCore camera pose.
    */
   @Override
   public void setWorldRotation(Quaternion rotation) {
-    if (isArCamera) {
-      throw new UnsupportedOperationException(
-          "Camera's rotation cannot be changed, it is controller by the ARCore camera pose.");
-    } else {
       super.setWorldRotation(rotation);
       Matrix.invert(getWorldModelMatrix(), viewMatrix);
-    }
   }
 
   /** @hide Used to explicitly set the projection matrix for testing. */
@@ -413,10 +319,6 @@ public class Camera extends Node implements CameraProvider {
 
   // Only used if this camera is not controlled by ARCore.
   private void refreshProjectionMatrix() {
-    if (isArCamera) {
-      return;
-    }
-
     int width = getViewWidth();
     int height = getViewHeight();
 

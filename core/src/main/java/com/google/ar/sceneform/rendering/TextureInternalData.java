@@ -1,7 +1,8 @@
 package com.google.ar.sceneform.rendering;
 
 import androidx.annotation.Nullable;
-import com.google.ar.core.annotations.UsedByNative;
+
+import com.google.android.filament.proguard.UsedByNative;
 import com.google.ar.sceneform.resources.SharedReference;
 import com.google.ar.sceneform.utilities.AndroidPreconditions;
 

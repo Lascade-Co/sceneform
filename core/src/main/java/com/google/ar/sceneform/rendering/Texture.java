@@ -4,12 +4,9 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.os.Build;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import com.google.android.filament.android.TextureHelper;
-
-import com.google.ar.core.annotations.UsedByNative;
+import com.google.android.filament.proguard.UsedByNative;
 import com.google.ar.sceneform.resources.ResourceRegistry;
 import com.google.ar.sceneform.utilities.AndroidPreconditions;
 import com.google.ar.sceneform.utilities.LoadHelper;
@@ -20,7 +17,6 @@ import java.util.concurrent.CompletableFuture;
 
 /** Represents a reference to a texture. */
 @SuppressWarnings({"AndroidApiChecker", "FutureReturnValueIgnored"}) // CompletableFuture
-@RequiresApi(api = Build.VERSION_CODES.N)
 @UsedByNative("material_java_wrappers.h")
 public class Texture {
   private static final String TAG = Texture.class.getSimpleName();

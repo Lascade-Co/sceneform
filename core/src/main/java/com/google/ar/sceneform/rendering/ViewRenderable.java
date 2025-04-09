@@ -1,9 +1,7 @@
 package com.google.ar.sceneform.rendering;
 
 import android.content.Context;
-import android.os.Build;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -35,8 +33,6 @@ import java.util.concurrent.CompletableFuture;
  * viewRenderable = future.thenAccept(...);
  * }</pre>
  */
-@RequiresApi(api = Build.VERSION_CODES.N)
-
 public class ViewRenderable extends Renderable {
   private static final String TAG = ViewRenderable.class.getSimpleName();
 
@@ -100,7 +96,6 @@ public class ViewRenderable extends Renderable {
     return new ViewRenderable(this);
   }
 
-  /** @hide */
   @SuppressWarnings({"initialization"})
   // Suppress @UnderInitialization warning.
   ViewRenderable(Builder builder, View view) {
@@ -196,7 +191,6 @@ public class ViewRenderable extends Renderable {
    * com.google.ar.sceneform.Node} and scales it to size it appropriately based on the meters to
    * pixel ratio for the view.
    *
-   * @hide
    * @param originalMatrix
    */
   @Override
